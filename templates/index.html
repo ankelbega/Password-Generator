@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="sq">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6fb">
+  <title>Gjenerator Fjalëkalimesh</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Kalo te përmbajtja</a>
+  <header class="topbar">
+    <a class="brand" href="#main-content" aria-label="Kryefaqja">
+      <span class="brand-mark" aria-hidden="true">◆</span>
+      <span>Fjalëkalim<span class="brand-accent"> i sigurt</span></span>
+    </a>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Ndrysho temën" aria-pressed="false">
+      <span aria-hidden="true" id="theme-icon">☾</span><span id="theme-label">Tema e errët</span>
+    </button>
+  </header>
+
+  <main id="main-content" class="page-shell">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">PRIVATËSI SË PARI</p>
+      <h1 id="page-title">Fjalëkalime të forta,<br><span>pa kompromis.</span></h1>
+      <p class="intro-copy">Gjenero fjalëkalime të rastësishme dhe kontrollo sigurinë e tyre. Historiku qëndron vetëm në këtë pajisje.</p>
+    </section>
+
+    <div class="workspace-card">
+      <div class="tabs" role="tablist" aria-label="Mjetet e fjalëkalimit">
+        <button class="tab is-active" id="tab-generate" role="tab" type="button" aria-selected="true" aria-controls="panel-generate" tabindex="0">Gjenero</button>
+        <button class="tab" id="tab-check" role="tab" type="button" aria-selected="false" aria-controls="panel-check" tabindex="-1">Kontrollo forcën</button>
+      </div>
+
+      <section class="tab-panel" id="panel-generate" role="tabpanel" aria-labelledby="tab-generate">
+        <div class="section-heading">
+          <div><p class="eyebrow">KRIJO NJË TË RI</p><h2>Gjeneratori</h2></div>
+          <span class="local-badge"><span aria-hidden="true">●</span> Lokal dhe privat</span>
+        </div>
+
+        <div class="field-block">
+          <label for="mode">Mënyra e gjenerimit</label>
+          <select id="mode" name="mode">
+            <option value="random">Random</option>
+            <option value="passphrase">Passphrase</option>
+            <option value="pin">PIN</option>
+          </select>
+        </div>
+
+        <div id="random-options" class="mode-options">
+          <div class="field-block">
+            <div class="label-row"><label for="length">Gjatësia</label><output id="length-value" for="length">16</output></div>
+            <input id="length" type="range" min="4" max="128" value="16">
+            <div class="range-hints"><span>4</span><span>128 karaktere</span></div>
+          </div>
+          <div class="option-grid">
+            <label class="check-option"><input type="checkbox" id="use-lower" checked><span>Shkronja të vogla</span></label>
+            <label class="check-option"><input type="checkbox" id="use-upper" checked><span>Shkronja të mëdha</span></label>
+            <label class="check-option"><input type="checkbox" id="use-digits" checked><span>Numra</span></label>
+            <label class="check-option"><input type="checkbox" id="use-symbols" checked><span>Simbole</span></label>
+            <label class="check-option"><input type="checkbox" id="exclude-similar"><span>Hiq karakteret e ngjashme</span></label>
+            <label class="check-option"><input type="checkbox" id="no-repeat"><span>Pa përsëritje</span></label>
+          </div>
+        </div>
+
+        <div id="phrase-options" class="mode-options" hidden>
+          <div class="field-row">
+            <div class="field-block"><label for="words">Numri i fjalëve</label><input id="words" type="number" min="3" max="10" value="4"></div>
+            <div class="field-block"><label for="separator">Ndarësi</label><select id="separator"><option value="-">Vizë (-)</option><option value="space">Hapësirë</option><option value=".">Pikë (.)</option><option value="_">Nënvizë (_)</option><option value="random">Rastësor</option></select></div>
+          </div>
+          <div class="field-row">
+            <div class="field-block"><label for="capitalize">Kapitalizimi</label><select id="capitalize"><option value="none">Asnjë</option><option value="first">Fjala e parë</option><option value="all">Të gjitha</option><option value="random">Rastësor</option></select></div>
+            <div class="option-grid compact-options">
+              <label class="check-option"><input type="checkbox" id="add-number"><span>Shto numër</span></label>
+              <label class="check-option"><input type="checkbox" id="add-symbol"><span>Shto simbol</span></label>
+            </div>
+          </div>
+        </div>
+
+        <div id="pin-options" class="mode-options" hidden>
+          <div class="field-block"><div class="label-row"><label for="pin-length">Gjatësia e PIN-it</label><output id="pin-length-value" for="pin-length">6</output></div><input id="pin-length" type="range" min="4" max="12" value="6"></div>
+          <div class="option-grid">
+            <label class="check-option"><input type="checkbox" id="pin-no-repeat"><span>Pa shifra të përsëritura</span></label>
+            <label class="check-option"><input type="checkbox" id="pin-no-sequences"><span>Pa sekuenca</span></label>
+            <label class="check-option"><input type="checkbox" id="pin-no-same" checked><span>Jo të gjitha njësoj</span></label>
+          </div>
+        </div>
+
+        <div class="field-row bulk-row">
+          <div class="field-block"><label for="count">Sa fjalëkalime?</label><input id="count" type="number" min="1" max="50" value="1"></div>
+          <button class="button button-primary" id="generate-button" type="button"><span aria-hidden="true">✦</span> Gjenero</button>
+        </div>
+
+        <p class="status-message" id="generate-status" role="status" aria-live="polite"></p>
+        <div id="generated-list" class="generated-list" aria-live="polite" aria-label="Fjalëkalimet e gjeneruara"></div>
+      </section>
+
+      <section class="tab-panel" id="panel-check" role="tabpanel" aria-labelledby="tab-check" hidden>
+        <div class="section-heading">
+          <div><p class="eyebrow">ANALIZË PRIVATE</p><h2>Kontrollo forcën</h2></div>
+          <span class="local-badge"><span aria-hidden="true">●</span> Pa ruajtje në server</span>
+        </div>
+        <div class="field-block">
+          <label for="check-password">Shkruaj fjalëkalimin</label>
+          <div class="password-input-wrap"><input id="check-password" type="password" autocomplete="off" spellcheck="false" aria-describedby="checker-note"><button id="toggle-check-password" class="icon-button" type="button" aria-label="Shfaq fjalëkalimin" aria-pressed="false">◉</button></div>
+          <p class="field-note" id="checker-note">Fjalëkalimi dërgohet vetëm për analizë dhe nuk regjistrohet.</p>
+        </div>
+        <div id="analysis-result" class="analysis-result" aria-live="polite" aria-atomic="true">
+          <div class="empty-analysis">Fillo të shkruash për të parë analizën.</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="history-section" aria-labelledby="history-title">
+      <div class="history-heading"><div><p class="eyebrow">VETËM NË KËTË PAJISJE</p><h2 id="history-title">Historiku yt</h2></div><button class="button button-quiet" id="clear-history" type="button">Fshi të gjitha</button></div>
+      <div id="history-list" class="history-list"><p class="history-empty">Fjalëkalimet e gjeneruara do të shfaqen këtu.</p></div>
+      <p class="privacy-note"><span aria-hidden="true">▣</span> Historiku ruhet lokalisht në shfletuesin tënd dhe nuk dërgohet në server.</p>
+    </section>
+    <footer class="page-footer"><span>Fjalëkalim i sigurt</span><span>Gjithçka qëndron në pajisjen tënde.</span></footer>
+  </main>
+</body>
+</html>

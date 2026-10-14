@@ -14,15 +14,9 @@ def client():
 
 
 def test_home_route_renders_page(client):
-    from flask import Response
-
-    # Template-i krijohet në fazën 5; testojmë tani vetëm rrugëzimin dhe headers.
-    app.view_functions["index"] = lambda: Response("OK")
-    try:
-        response = client.get("/")
-    finally:
-        app.view_functions.pop("index", None)
+    response = client.get("/")
     assert response.status_code == 200
+    assert b"Kontrollo forc\xc3\xabn" in response.data
     assert response.headers["X-Frame-Options"] == "DENY"
 
 
