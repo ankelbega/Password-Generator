@@ -12,6 +12,7 @@ from core.charsets import (
     CHARACTER_GROUPS,
     SIMILAR_CHARACTERS,
 )
+from core.wordlist import WORDLIST
 
 _MAX_ATTEMPTS = 1000
 
@@ -194,3 +195,146 @@ def generate_random(**options: Any) -> dict[str, Any]:
 def generate_random_from_options(options: Mapping[str, Any]) -> dict[str, Any]:
     """Ndërfaqe e përshtatshme që merr parametrat si mapping."""
     return generate_random(**dict(options))
+
+
+def generate_passphrase(
+    words: int = 4,
+    separator: str = "-",
+    capitalize: str = "none",
+    add_number: bool = False,
+    add_symbol: bool = False,
+) -> dict[str, Any]:
+    """Gjenero passphrase me fjalë të zgjedhura nga CSPRNG."""
+    if isinstance(words, bool) or not isinstance(words, int) or not 3 <= words <= 10:
+        raise ValueError("Numri i fjalëve duhet të jetë nga 3 deri në 10.")
+    separators = {"space": " ", "dot": ".", ".": ".", "_": "_", "-": "-"}
+    if separator == "random":
+        actual_separator = secrets.choice(("-", " ", ".", "_"))
+    elif separator in separators:
+        actual_separator = separators[separator]
+    else:
+        raise ValueError("Separatori duhet të jetë '-', 'space', '.', '_', ose 'random'.")
+    if capitalize not in {"none", "first", "all", "random"}:
+        raise ValueError("Kapitalizimi duhet të jetë none, first, all ose random.")
+    if not isinstance(add_number, bool) or not isinstance(add_symbol, bool):
+        raise ValueError("Opsionet add_number dhe add_symbol duhet të jenë true ose false.")
+
+    selected = [secrets.choice(WORDLIST) for _ in range(words)]
+    if capitalize == "first":
+        selected[0] = selected[0].capitalize()
+    elif capitalize == "all":
+        selected = [word.capitalize() for word in selected]
+    elif capitalize == "random":
+        selected = [word.capitalize() if secrets.randbelow(2) else word for word in selected]
+    phrase = actual_separator.join(selected)
+    entropy = words * math.log2(len(WORDLIST))
+    if add_number:
+        number = str(secrets.randbelow(100))
+        entropy += math.log2(100)
+        if secrets.randbelow(2):
+            phrase += number
+        else:
+            insertion = secrets.randbelow(len(phrase) + 1)
+            phrase = phrase[:insertion] + number + phrase[insertion:]
+    if add_symbol:
+        symbol = secrets.choice("!@#$%^&*()-_=+[]{};:,.<>?/")
+        entropy += math.log2(len("!@#$%^&*()-_=+[]{};:,.<>?/"))
+        if secrets.randbelow(2):
+            phrase += symbol
+        else:
+            insertion = secrets.randbelow(len(phrase) + 1)
+            phrase = phrase[:insertion] + symbol + phrase[insertion:]
+    return {"password": phrase, "entropy_bits": round(entropy, 2)}
+
+
+def generate_pin(
+    length: int = 4,
+    no_repeat: bool = False,
+    no_sequences: bool = False,
+    no_all_same: bool = False,
+) -> dict[str, Any]:
+    """Gjenero PIN numerik, me refuzim të sekuencave dhe përsëritjeve sipas opsioneve."""
+    if isinstance(length, bool) or not isinstance(length, int) or not 4 <= length <= 12:
+        raise ValueError("Gjatësia e PIN-it duhet të jetë nga 4 deri në 12.")
+    no_repeat = _as_bool(no_repeat, "no_repeat")
+    no_sequences = _as_bool(no_sequences, "no_sequences")
+    no_all_same = _as_bool(no_all_same, "no_all_same")
+    if no_repeat and length > 10:
+        raise ValueError("PIN pa përsëritje nuk mund të jetë më i gjatë se 10 shifra.")
+
+    for _ in range(_MAX_ATTEMPTS):
+        if no_repeat:
+            digits = list("0123456789")
+            for index in range(len(digits) - 1, 0, -1):
+                swap_index = secrets.randbelow(index + 1)
+                digits[index], digits[swap_index] = digits[swap_index], digits[index]
+            pin = "".join(digits[:length])
+        else:
+            pin = "".join(secrets.choice("0123456789") for _ in range(length))
+        if no_all_same and len(set(pin)) == 1:
+            continue
+        if no_sequences and _has_digit_sequence(pin):
+            continue
+        if _looks_like_date(pin):
+            continue
+        return {"password": pin, "entropy_bits": round(length * math.log2(10), 2)}
+    raise ValueError("Nuk u gjet PIN që plotëson rregullat pas 1000 tentativash.")
+
+
+def _has_digit_sequence(pin: str) -> bool:
+    """Gjej seri shifrash rritëse ose zbritëse me gjatësi të paktën tri."""
+    for index in range(len(pin) - 2):
+        run = pin[index : index + 3]
+        if int(run[1]) - int(run[0]) == int(run[2]) - int(run[1]) in (1, -1):
+            return True
+    return False
+
+
+def _looks_like_date(pin: str) -> bool:
+    """Refuzo formate të zakonshme datash (DDMM, MMDD, DDMMYY, DDMMYYYY)."""
+    if len(pin) not in {4, 6, 8}:
+        return False
+    candidates: list[tuple[str, str, str]] = []
+    if len(pin) == 4:
+        candidates.extend(((pin[:2], pin[2:], ""), (pin[2:], pin[:2], "")))
+    elif len(pin) == 6:
+        candidates.append((pin[:2], pin[2:4], pin[4:]))
+        candidates.append((pin[4:], pin[2:4], pin[:2]))
+    else:
+        candidates.append((pin[:2], pin[2:4], pin[4:]))
+        candidates.append((pin[6:], pin[4:6], pin[:4]))
+    for day_text, month_text, year_text in candidates:
+        day, month = int(day_text), int(month_text)
+        if not 1 <= day <= 31 or not 1 <= month <= 12:
+            continue
+        if not year_text:
+            return True
+        year = int(year_text)
+        if (len(year_text) == 2 and 0 <= year <= 99) or (len(year_text) == 4 and 1900 <= year <= 2099):
+            return True
+    return False
+
+
+def generate_bulk(count: int = 1, mode: str = "random", **options: Any) -> dict[str, Any]:
+    """Gjenero një grup fjalëkalimesh unike me opsione të përbashkëta."""
+    if isinstance(count, bool) or not isinstance(count, int) or not 1 <= count <= 50:
+        raise ValueError("Numri i fjalëkalimeve duhet të jetë nga 1 deri në 50.")
+    generators = {
+        "random": generate_random,
+        "passphrase": generate_passphrase,
+        "pin": generate_pin,
+    }
+    if mode not in generators:
+        raise ValueError("Mënyra duhet të jetë random, passphrase ose pin.")
+    passwords: list[str] = []
+    entropy_bits: float | None = None
+    attempts = 0
+    while len(passwords) < count and attempts < count * _MAX_ATTEMPTS:
+        result = generators[mode](**options)
+        entropy_bits = result["entropy_bits"]
+        if result["password"] not in passwords:
+            passwords.append(result["password"])
+        attempts += 1
+    if len(passwords) != count:
+        raise ValueError("Nuk mund të gjenerohen mjaft fjalëkalime unike me këto parametra.")
+    return {"passwords": passwords, "entropy_bits": entropy_bits}

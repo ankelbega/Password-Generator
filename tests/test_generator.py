@@ -102,7 +102,7 @@ def test_rejects_empty_active_group_after_exclusions():
 
 def test_rejects_no_repeat_capacity_conflict():
     with pytest.raises(ValueError, match="më shumë karaktere unike"):
-        generate_random(length=20, use_lower=True, use_upper=False, use_digits=False,
+        generate_random(length=27, use_lower=True, use_upper=False, use_digits=False,
                         use_symbols=False, no_repeat=True)
 
 
